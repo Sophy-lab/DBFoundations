@@ -150,7 +150,7 @@ From Northwind.dbo.Products
 UNIOn
 Select '20170301' as InventoryDate, 9 as EmployeeID, ProductID, abs(UnitsInStock - 10), ReorderLevel -- Using this is to create a made up value
 From Northwind.dbo.Products
-Order By 1, 2
+Order By 1, 2;
 go
 
 
@@ -197,7 +197,7 @@ Print
 -- <Put Your Code Here> --
 Select 
 P.ProductName,
-UnitPrice = Format (P.UnitPrice, ‘C’, ‘en-us’)
+UnitPrice = Format(P.UnitPrice, ‘C’, ‘en-us’)
 From vProducts as P
 Order By 1;
 go
@@ -226,7 +226,7 @@ go
 
 Select
 P.ProductName,
-[InventoryDate] = DateName(MM,I.InventoryDate) + ‘,’ + DateName(YY, I.InventoryDate),
+[InventoryDate] = DateName(MM,I.InventoryDate) + ‘, ’ + DateName(YY, I.InventoryDate),
 [InventoryCount] = I.[Count]
 From vProducts as P 
 Inner Join vInventories as I
@@ -242,9 +242,9 @@ go
 
 -- <Put Your Code Here> --
 Create -- Drop
-View v ProductInventories
-AS
-Select Top 1000000  - - PERCENT ignores Order By
+View vProductInventories
+As
+Select Top 1000000  -- PERCENT ignores Order By
 P.ProductName,
 [InventoryDate] = DateName(MM, I.InventoryDate) + ‘,’ + DateName(YY, I.InventoryDate),
 [InventoryCount] = I.[Count]
@@ -267,9 +267,9 @@ go
 Create -- Drop
 View vCategoryInventories 
 As
-Select Top 1000000 - - Use with view CREATE to allow Order By (Not 100 PERCENT)
+Select Top 1000000 -- Use with view CREATE to allow Order By (Not 100 PERCENT)
 C.CategoryName,
-[InventoryDate] = DateName(MM, I.InventoryDate) + ‘,’ + DateName(YY, I.InventoryDate),
+[InventoryDate] = DateName(MM, I.InventoryDate) + ',' + DateName(YY, I.InventoryDate),
 [InventoryCountByCategory] = Sum(I.[Count])
 From vCategories as C 
 Inner Join vProducts as P
@@ -277,7 +277,7 @@ On C.CategoryID = P.CategoryID
 Inner Join vInventories as I 
 On P.ProductID = I.ProductID
 Group By C.CategoryName, InventoryDate
-Order By CategoryName, MONTH (InventoryDate), InventoryCountByCategory;
+Order By CategoryName, MONTH(InventoryDate), InventoryCountByCategory;
 go
 
 -- Check that it works: Select * From vCategoryInventories;
@@ -292,22 +292,18 @@ go
 
 -- <Put Your Code Here> --
 Create -- Drop
-View vProductInventorieswithPreviousMonthCounts
+View vProductInventoriesWithPreviousMonthCounts
 As
 Select Top 100000
 ProductName,
 InventoryDate,
 InventoryCount,
-[PreviousMonthCount] = IIF(InventoryDate Like ('January%'), 0, IsNull(Lag(InventoryCount) Over (Order By ProductName, Year(InventoryDate)), 0) )
+[PreviousMonthCount] = IIF(InventoryDate Like ('January%'), 0, IsNull(Lag(InventoryCount) Over (Order By ProductName, Year(InventoryDate)), 0))
 From vProductInventories
-Order By 1, Case(InventoryDate as Date),3;
+Order By 1, Cast(InventoryDate as Date), 3;
 go
-
-
-
 
 -- Check that it works: Select * From vProductInventoriesWithPreviousMonthCounts;
-go
 
 -- Question 7 (15% of pts): 
 -- CREATE a VIEW called vProductInventoriesWithPreviousMonthCountsWithKPIs.
@@ -319,9 +315,9 @@ go
 -- <Put Your Code Here> --
 
 -- Important: This new view must use your vProductInventoriesWithPreviousMonthCounts view!
--- Check that it works: Select * From vProductInventoriesWithPreviousMonthCountsWithKPIs;
+-- Check that it works:Select * From vProductInventoriesWithPreviousMonthCountsWithKPIs;
 Create -- Drop
-View vProductInventorieswithPreviousMonthCountswithKPIs
+View vProductInventoriesWithPreviousMonthCountswithKPIs
 As
 Select Top 1000000
 ProductName,
@@ -347,10 +343,30 @@ go
 -- Varify that the results are ordered by the Product and Date.
 
 -- <Put Your Code Here> --
-Create -- Drop
-Function fProductInventoriesWithPreviousMonthCountsWtihKPIS (@KPIValue int)
+Create function fProductInventoriesWithPreviousMonthCountsWithKPIs (@KPIValue Int)
+Returns table 
+As
+	Return Select 
+	      ProductName, 
+		  InventoryDate,
+		  InventoryCount,
+		  PreviousMonthCount,
+		  [CountvsPreviousCountKPI] = ISNULL(CASE
+		when InventoryCount > [PreviousMonthCount] Then 1
+		when InventoryCount = [PreviousMonthCount] Then 0
+		when InventoryCount < [PreviousMonthCount] Then -1
+		End, 0)
+	from vProductInventoriesWithPreviousMonthCountsWithKPIs
+Order By ProductName, Month(InventoryDate); 
+go
+
+Drop function fProductInventoriesWithPreviousMonthCountsWithKPIs;
+go
+
+Create -- Drop 
+Function fProductInventoriesWithPreviousMonthCountsWithKPIs (@KPIValue int)
 Returns Table
-AS
+As
 Return Select
 ProductName,
 InventoryDate,
@@ -362,11 +378,15 @@ Where [CountVsPreviousCountKPI] = @KPIValue;
 go
 
 
-/* Check that it works:
-Select * From fProductInventoriesWithPreviousMonthCountsWithKPIs(1);
-Select * From fProductInventoriesWithPreviousMonthCountsWithKPIs(0);
-Select * From fProductInventoriesWithPreviousMonthCountsWithKPIs(-1);
-*/
+-- Check that it works:
+
+Select * From fProductInventoriesWithPreviousMonthCountsWithKPIs(1) Order By 1,2,3;
+Select * From fProductInventoriesWithPreviousMonthCountsWithKPIs(0) Order By 1,2,3;
+Select * From fProductInventoriesWithPreviousMonthCountsWithKPIs(-1) Order By 1,2,3;
 go
+[Google Homepage] (https://google.com "Google's Homepage")
+
+[Github Webpage Code CheatSheet] (https://github.com/Sophy-lab/DBFoundations/tree/Main/Assignment%207)
+GO
 
 /***************************************************************************************/
